@@ -1,6 +1,30 @@
 {
   "name": "digipin-openlayers",
   "version": "0.0.1-dev",
+  "description": "Interactive DIGIPIN (Digital Postal Index Number) generator for India using OpenLayers map interface",
+  "keywords": [
+    "digipin",
+    "digital postal index number",
+    "india post",
+    "geocoding",
+    "openlayers",
+    "mapping",
+    "postal codes",
+    "address system",
+    "geospatial",
+    "iit hyderabad",
+    "next.js",
+    "interactive map",
+    "location finder",
+    "gis"
+  ],
+  "homepage": "https://ronitjadhav.github.io/digipin-openlayers",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ronitjadhav/digipin-openlayers.git"
+  },
+  "author": "Ronit Jadhav",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,11 +33,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@fontsource/space-grotesk": "^5.2.8",
     "@geospatial-sdk/geocoding": "^0.0.5-dev.14",
     "@radix-ui/react-slot": "^1.1.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
-    "digipin": "^0.0.2-dev",
+    "digipin": "^0.0.3-dev",
     "framer-motion": "^11.3.19",
     "lucide-react": "^0.416.0",
     "mini-svg-data-uri": "^1.4.4",

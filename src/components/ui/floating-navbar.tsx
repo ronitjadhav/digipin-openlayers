@@ -31,7 +31,7 @@ export const FloatingNav = ({
                     duration: 0.2,
                 }}
                 className={cn(
-                    "flex max-w-fit fixed top-0 inset-x-0 mx-auto border border-transparent dark:border-white/[0.2] rounded-full dark:bg-black bg-white shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)] z-[5000] pr-2 pl-8 py-2 items-center justify-center space-x-4",
+                    "flex max-w-fit fixed top-6 sm:top-6 inset-x-0 mx-auto border border-transparent dark:border-white/[0.15] rounded-xl sm:rounded-2xl dark:bg-black/85 bg-white/85 backdrop-blur-md shadow-[0px_8px_25px_-5px_rgba(0,0,0,0.1),0px_4px_6px_-2px_rgba(0,0,0,0.05)] dark:shadow-[0px_8px_25px_-5px_rgba(255,255,255,0.05),0px_4px_6px_-2px_rgba(255,255,255,0.05)] z-[6000] px-4 sm:px-6 py-2 sm:py-3 items-center justify-center space-x-3 sm:space-x-6 transition-all duration-300 hover:shadow-[0px_12px_30px_-8px_rgba(0,0,0,0.15)] dark:hover:shadow-[0px_12px_30px_-8px_rgba(255,255,255,0.08)]",
                     className
                 )}
             >
@@ -40,13 +40,14 @@ export const FloatingNav = ({
                         key={`link=${idx}`}
                         href={navItem.link}
                         className={cn(
-                            "relative dark:text-neutral-50 items-center flex space-x-1 text-neutral-600 dark:hover:text-neutral-300 hover:text-neutral-500"
+                            "relative dark:text-neutral-50 items-center flex space-x-1 sm:space-x-2 text-neutral-700 dark:hover:text-neutral-200 hover:text-neutral-900 transition-colors duration-200 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl hover:bg-neutral-100/50 dark:hover:bg-neutral-800/50"
                         )}
                     >
-                        <span className="block sm:hidden">{navItem.icon}</span>
-                        <span className="hidden sm:block text-sm">{navItem.name}</span>
+                        <span className="flex text-lg sm:text-base">{navItem.icon}</span>
+                        <span className="hidden sm:block text-sm font-medium">{navItem.name}</span>
                     </Link>
                 ))}
+                <div className="hidden sm:block w-px h-6 bg-neutral-300 dark:bg-neutral-600 mx-2"></div>
                 <ToggleMode />
             </motion.div>
         </AnimatePresence>

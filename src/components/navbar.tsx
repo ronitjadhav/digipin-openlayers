@@ -9,17 +9,15 @@ export function FloatingNavDemo() {
         {
             name: "Digipin Map",
             link: "/",
-            icon: <LiaMapMarkedSolid size={30} />,
+            icon: <LiaMapMarkedSolid size={24} />,
         },
         {
             name: "What is Digipin?",
             link: "/about",
-            icon: <MdOutlineHelpOutline size={30} />,
+            icon: <MdOutlineHelpOutline size={24} />,
         },
     ];
     return (
-        <div className="relative w-full z-20">
-            <FloatingNav navItems={navItems} className="fixed mt-5 left-0 w-full z-20" />
-        </div>
+        <FloatingNav navItems={navItems} />
     );
 }

@@ -1,21 +1,43 @@
-# DIGIPIN OPENLAYERS
+# 🗺️ DIGIPIN Interactive Map - Digital Postal Index Number Generator
 
-This application allows users to click on a map and get the respective DIGIPIN for the selected location. DIGIPIN is a geo-coded addressing system in India, providing a unique 10-digit alphanumeric code derived from latitude and longitude coordinates.
+[![Live Demo](https://img.shields.io/badge/Live-Demo-green)](https://digipin.maplabs.tec)
+[![Next.js](https://img.shields.io/badge/Next.js-14.2.5-black)](https://nextjs.org/)
+[![OpenLayers](https://img.shields.io/badge/OpenLayers-Latest-blue)](https://openlayers.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 
-## Table of Contents
+**Interactive web application for generating DIGIPIN (Digital Postal Index Number) codes for any location in India using an OpenLayers-powered map interface.**
 
-- [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Contributing](#contributing)
-- [Implementing DIGIPIN in Your Project](#implementing-digipin-in-your-project)
-  
-## Features
+DIGIPIN is India's revolutionary geo-coded addressing system developed by **India Post** in collaboration with **IIT Hyderabad**. This tool provides precise 10-digit alphanumeric codes based on a 4m x 4m geographical grid system for accurate location addressing and delivery services.
 
-- Interactive map for selecting locations
-- Generate DIGIPIN from latitude and longitude
-- Convert DIGIPIN back to latitude and longitude
-- Responsive design with dark mode support
+## 🌟 Features
+
+- **🗺️ Interactive Map Interface** - Click anywhere on the map to generate DIGIPIN codes
+- **🔍 Address Search** - Search by location name, address, or coordinates  
+- **📋 One-Click Copy** - Copy DIGIPIN codes to clipboard instantly
+- **🌓 Dark/Light Theme** - Automatic theme switching with system preference
+- **📱 Mobile Responsive** - Optimized for all device sizes
+- **🎯 Boundary Visualization** - See precise 4m x 4m grid areas with polygon overlays
+- **⚡ Real-time Generation** - Instant DIGIPIN code generation
+- **🔄 Bidirectional Conversion** - Convert between coordinates and DIGIPIN codes
+
+## 🚀 Live Demo
+
+**[🌐 Try DIGIPIN Generator](https://digipin.maplabs.tec)**
+
+## 📖 About DIGIPIN
+
+DIGIPIN (Digital Postal Index Number) is a standardized geo-coded addressing system that:
+
+- Divides India's geographical territory into uniform **4m × 4m grid units**
+- Assigns each unit a unique **10-digit alphanumeric code** 
+- Derives codes from precise latitude and longitude coordinates
+- Enhances delivery accuracy and emergency response times
+- Supports India's digital transformation in logistics and governance
+
+**Developed by:** India Post & IIT Hyderabad  
+**Coverage:** All of India  
+**Precision:** 4-meter accuracy  
+**Format:** 10-digit alphanumeric code
 
 ## Installation
 

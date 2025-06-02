@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://ronitjadhav.github.io/digipin-openlayers/sitemap.xml
+
+# Block access to source maps and config files
+Disallow: /*.map$
+Disallow: /_next/
+Disallow: /api/
+
+# Allow search engines to crawl main pages
+Allow: /digipin-openlayers
+Allow: /digipin-openlayers/about
+
+# Crawl delay (optional, helps prevent overloading)
+Crawl-delay: 1

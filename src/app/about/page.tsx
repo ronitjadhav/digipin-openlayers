@@ -1,15 +1,56 @@
 import { NextPage } from 'next';
-import Head from 'next/head';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'About DIGIPIN - Digital Postal Index Number System',
+  description: 'Learn about DIGIPIN, India\'s revolutionary geo-coded addressing system developed by India Post and IIT Hyderabad. Understand how 4m x 4m grid system works for precise location addressing.',
+  keywords: [
+    'About DIGIPIN',
+    'Digital Postal Index Number history',
+    'India Post addressing system',
+    'IIT Hyderabad collaboration',
+    'geo-coded addressing',
+    'postal innovation India',
+    'location grid system'
+  ],
+  openGraph: {
+    title: 'About DIGIPIN - Digital Postal Index Number System',
+    description: 'Discover how DIGIPIN revolutionizes addressing in India with precise 4m x 4m grid-based geocoding.',
+    url: 'https://ronitjadhav.github.io/digipin-openlayers/about',
+  },
+};
 
 const About: NextPage = () => {
+    const aboutStructuredData = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "About DIGIPIN - Digital Postal Index Number System",
+        "description": "Learn about India's revolutionary geo-coded addressing system",
+        "author": {
+            "@type": "Organization",
+            "name": "India Post & IIT Hyderabad"
+        },
+        "publisher": {
+            "@type": "Organization", 
+            "name": "DIGIPIN",
+            "url": "https://www.indiapost.gov.in"
+        },
+        "mainEntityOfPage": "https://ronitjadhav.github.io/digipin-openlayers/about",
+        "about": {
+            "@type": "Thing",
+            "name": "DIGIPIN",
+            "description": "Digital Postal Index Number - India's standardized geo-coded addressing system"
+        }
+    };
+
     return (
-        <div
-            className="min-h-screen w-full dark:bg-black bg-white dark:bg-dot-white/[0.3] bg-dot-black/[0.3] bg-fixed flex flex-col items-center justify-center p-4">
-            <Head>
-                <title>About DIGIPIN</title>
-            </Head>
-            <div
-                className="w-full max-w-4xl mx-auto flex flex-col lg:flex-row gap-7 mt-16 mb-8 lg:mt-28 lg:mb-16 justify-center">
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutStructuredData) }}
+            />
+            <div className="min-h-screen w-full dark:bg-black bg-white dark:bg-dot-white/[0.3] bg-dot-black/[0.3] bg-fixed flex flex-col items-center justify-center p-4">
+                <div className="w-full max-w-4xl mx-auto flex flex-col lg:flex-row gap-7 mt-16 mb-8 lg:mt-28 lg:mb-16 justify-center">
                 <div className="flex-1 p-4 sm:p-6 rounded-lg shadow-md bg-white dark:bg-zinc-800 lg:min-w-[600px]">
                     <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8 dark:text-white">About
                         DIGIPIN</h1>
@@ -106,6 +147,7 @@ console.log(coordinates); // Output: { latitude: 28.6139, longitude: 77.2090 }
                 </div>
             </div>
         </div>
+        </>
     );
 };
 
