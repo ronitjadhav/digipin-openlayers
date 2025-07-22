@@ -2,8 +2,9 @@ import React, { useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useTheme } from 'next-themes';
 import { Button } from './ui/button';
-import { FiCopy, FiMapPin } from 'react-icons/fi';
+import { FiCopy, FiMapPin, FiExternalLink, FiMap } from 'react-icons/fi';
 import { motion, useAnimation } from 'framer-motion';
+import { getBoundsFromDIGIPIN } from 'digipin';
 
 interface FloatingDigipinPanelProps {
     digipin: string;
@@ -56,6 +57,116 @@ const FloatingDigipinPanel: React.FC<FloatingDigipinPanelProps> = ({ digipin }) 
         });
     };
 
+    const openInGoogleMaps = () => {
+        try {
+            const bounds = getBoundsFromDIGIPIN(digipin);
+            
+            if (!bounds || bounds === "Invalid DIGIPIN" || typeof bounds === "string") {
+                toast.error('Unable to get coordinates for this DIGIPIN!', {
+                    position: "top-right",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                });
+                return;
+            }
+
+            const { minLat, maxLat, minLon, maxLon } = bounds;
+            
+            // Calculate center coordinates with higher precision
+            const centerLat = Number(((minLat + maxLat) / 2).toFixed(8));
+            const centerLon = Number(((minLon + maxLon) / 2).toFixed(8));
+            
+            console.log('DIGIPIN bounds:', { minLat, maxLat, minLon, maxLon });
+            console.log('Calculated center coordinates:', { centerLat, centerLon });
+            
+            // Create Google Maps URL with marker
+            const googleMapsUrl = `https://www.google.com/maps/place/${centerLat},${centerLon}/@${centerLat},${centerLon},19z`;
+            
+            console.log('Google Maps URL:', googleMapsUrl);
+            
+            // Open in new tab
+            window.open(googleMapsUrl, '_blank');
+            
+            // Show success message
+            toast.success(`Opening in Google Maps! (${centerLat}, ${centerLon})`, {
+                position: "top-right",
+                autoClose: 4000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+            });
+        } catch (error) {
+            console.error('Error opening Google Maps:', error);
+            toast.error('Failed to open Google Maps!', {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+            });
+        }
+    };
+
+    const openInOpenStreetMap = () => {
+        try {
+            const bounds = getBoundsFromDIGIPIN(digipin);
+            
+            if (!bounds || bounds === "Invalid DIGIPIN" || typeof bounds === "string") {
+                toast.error('Unable to get coordinates for this DIGIPIN!', {
+                    position: "top-right",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                });
+                return;
+            }
+
+            const { minLat, maxLat, minLon, maxLon } = bounds;
+            
+            // Calculate center coordinates with higher precision
+            const centerLat = Number(((minLat + maxLat) / 2).toFixed(8));
+            const centerLon = Number(((minLon + maxLon) / 2).toFixed(8));
+            
+            console.log('DIGIPIN bounds for OSM:', { minLat, maxLat, minLon, maxLon });
+            console.log('Calculated center coordinates for OSM:', { centerLat, centerLon });
+            
+            // Create OpenStreetMap URL with marker
+            const osmUrl = `https://www.openstreetmap.org/?mlat=${centerLat}&mlon=${centerLon}&zoom=19#map=19/${centerLat}/${centerLon}`;
+            
+            console.log('OpenStreetMap URL:', osmUrl);
+            
+            // Open in new tab
+            window.open(osmUrl, '_blank');
+            
+            // Show success message
+            toast.success(`Opening in OpenStreetMap! (${centerLat}, ${centerLon})`, {
+                position: "top-right",
+                autoClose: 4000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+            });
+        } catch (error) {
+            console.error('Error opening OpenStreetMap:', error);
+            toast.error('Failed to open OpenStreetMap!', {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+            });
+        }
+    };
+
     if (!digipin) return null;
 
     return (
@@ -96,7 +207,7 @@ const FloatingDigipinPanel: React.FC<FloatingDigipinPanelProps> = ({ digipin }) 
                     {digipin}
                 </motion.div>
                 
-                <div className="w-full mt-2 md:mt-3">
+                <div className="w-full mt-2 md:mt-3 space-y-2">
                     <Button 
                         onClick={copyToClipboard}
                         variant="outline"
@@ -109,6 +220,34 @@ const FloatingDigipinPanel: React.FC<FloatingDigipinPanelProps> = ({ digipin }) 
                     >
                         <FiCopy size={14} />
                         <span>Copy</span>
+                    </Button>
+                    
+                    <Button 
+                        onClick={openInGoogleMaps}
+                        variant="outline"
+                        size="sm" 
+                        className={`flex items-center gap-1 w-full justify-center text-xs md:text-sm ${
+                            theme === 'dark' 
+                                ? 'hover:bg-gray-700 border-gray-700' 
+                                : 'hover:bg-gray-100 border-gray-200'
+                        }`}
+                    >
+                        <FiExternalLink size={14} />
+                        <span>Open in Google Maps</span>
+                    </Button>
+                    
+                    <Button 
+                        onClick={openInOpenStreetMap}
+                        variant="outline"
+                        size="sm" 
+                        className={`flex items-center gap-1 w-full justify-center text-xs md:text-sm ${
+                            theme === 'dark' 
+                                ? 'hover:bg-gray-700 border-gray-700' 
+                                : 'hover:bg-gray-100 border-gray-200'
+                        }`}
+                    >
+                        <FiMap size={14} />
+                        <span>Open in OpenStreetMap</span>
                     </Button>
                 </div>
             </div>

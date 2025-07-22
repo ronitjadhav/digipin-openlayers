@@ -24,13 +24,12 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
     const mapboxLightStyle = String(process.env.NEXT_PUBLIC_MAPBOX_LIGHT_STYLE_URL);
     const mapboxDarkStyle = String(process.env.NEXT_PUBLIC_MAPBOX_DARK_STYLE_URL);
     const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
-    const [isSearchResult, setIsSearchResult] = useState(false); // Track if current coordinates are from search
+    const [searchMode, setSearchMode] = useState(false); // Track if location is from search
     const { theme } = useTheme();
     const defaultCenter: [number, number] = [78.9629, 20.5937];
     const defaultZoom: number = 4;
     const maxZoom: number = 22; // Maximum zoom level - increased for better digipin visibility
     const digipinSelectZoom: number = 20; // Specific zoom level when selecting a digipin
-    const searchZoom: number = 14; // City-level zoom for search results
 
     // Create enhanced polygon style with multiple visibility features
     const createPolygonStyle = (digipin: string) => {
@@ -208,14 +207,11 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
     };
 
     // Handle search location selection (less aggressive zoom, no digipin markers)
-    const handleSearchLocation = (coords: [number, number], isDigipinSearch: boolean = false) => {
-        console.log('handleSearchLocation called with coords:', coords);
-        console.log('Is digipin search:', isDigipinSearch);
-        setIsSearchResult(!isDigipinSearch); // If it's a digipin search, don't treat it as a regular search result
+    const handleSearchLocation = (coords: [number, number]) => {
+        setSearchMode(true);
         setCoordinates(coords);
     };
-
-    useEffect(() => {
+    };
         if (mapRef.current && mapboxToken) {
             const isDarkTheme = theme === 'dark';
             const layers = [
@@ -256,7 +252,6 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
                 try {
                     const digipin = await getDIGIPINFromLatLon(latitude, longitude);
                     setDigipin(digipin);
-                    setIsSearchResult(false); // Reset search result flag when clicking on map
                     
                     // Add polygon boundary visualization
                     await addPolygonBoundary(latitude, longitude);
@@ -280,51 +275,28 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
                 const transformedCoords: [number, number] = transform([lon, lat], 'EPSG:4326', 'EPSG:3857') as [number, number];
                 
                 console.log(`Zooming to coordinates: ${transformedCoords}`);
-                console.log('Is search result:', isSearchResult);
                 view.setCenter(transformedCoords);
+                view.setZoom(digipinSelectZoom); // Use enhanced zoom level for search results
                 
-                if (isSearchResult) {
-                    // For search results: moderate zoom and no digipin markers
-                    console.log('Applying search zoom level:', searchZoom);
-                    view.setZoom(searchZoom);
-                    // Clear any existing digipin markers
-                    if (vectorSourceRef.current) {
-                        vectorSourceRef.current.clear();
-                    }
-                    // Still set the digipin for the panel, but don't show markers
-                    try {
-                        const digipin = await getDIGIPINFromLatLon(lat, lon);
-                        setDigipin(digipin);
-                    } catch (error) {
-                        console.error('Error getting DIGIPIN from coordinates:', error);
-                    }
-                } else {
-                    // For direct coordinate input (like digipin codes): use full zoom with markers
-                    view.setZoom(digipinSelectZoom);
-                    try {
-                        const digipin = await getDIGIPINFromLatLon(lat, lon);
-                        setDigipin(digipin);
-                        await addPolygonBoundary(lat, lon);
-                    } catch (error) {
-                        console.error('Error getting DIGIPIN from coordinates:', error);
-                    }
-                }
-                
-                // Reset search result flag after handling coordinates
-                if (isSearchResult) {
-                    setIsSearchResult(false);
+                // Get DIGIPIN and add boundary visualization
+                try {
+                    const digipin = await getDIGIPINFromLatLon(lat, lon);
+                    setDigipin(digipin);
+                    await addPolygonBoundary(lat, lon);
+                } catch (error) {
+                    console.error('Error getting DIGIPIN from coordinates:', error);
                 }
             }
         };
 
         handleCoordinates();
-    }, [coordinates, setDigipin]); // Removed searchMode from dependencies
+    }, [coordinates, setDigipin]);
 
     return (
         <div className='relative w-full h-full'>
             <div ref={mapRef} className='w-full h-full relative bg-neutral-50 dark:bg-neutral-900'>
                 <div className='absolute bottom-4 z-10 w-full px-4'>
-                    <PlaceholdersAndVanishInputDemo onLocationSelect={handleSearchLocation} />
+                    <PlaceholdersAndVanishInputDemo onLocationSelect={setCoordinates} />
                 </div>
             </div>
         </div>
