@@ -8,6 +8,7 @@ interface PlaceholdersAndVanishInputProps {
     placeholders: string[];
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+    onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
     value: string;
 }
 
@@ -15,6 +16,7 @@ export function PlaceholdersAndVanishInput({
                                                placeholders,
                                                onChange,
                                                onSubmit,
+                                               onKeyDown,
                                                value,
                                            }: PlaceholdersAndVanishInputProps) {
     const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
@@ -152,7 +154,13 @@ export function PlaceholdersAndVanishInput({
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter" && !animating) {
+        // Call the external keyDown handler first (for dropdown navigation)
+        if (onKeyDown) {
+            onKeyDown(e);
+        }
+        
+        // Handle Enter key for form submission (only if not handled by dropdown)
+        if (e.key === "Enter" && !animating && !e.defaultPrevented) {
             vanishAndSubmit();
         }
     };
