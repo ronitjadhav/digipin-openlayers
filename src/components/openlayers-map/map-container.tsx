@@ -269,7 +269,7 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
 
             return () => map.setTarget(undefined);
         }
-    }, [mapboxToken, setDigipin, theme]);
+    }, [mapboxToken, setDigipin, theme, addPolygonBoundary, defaultCenter, mapboxDarkStyle, mapboxLightStyle]);
 
     // Handle coordinate updates from search
     useEffect(() => {
@@ -318,7 +318,7 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
         };
 
         handleCoordinates();
-    }, [coordinates, setDigipin]); // Removed searchMode from dependencies
+    }, [coordinates, setDigipin, addPolygonBoundary, isSearchResult]); // Removed searchMode from dependencies
 
     return (
         <div className='relative w-full h-full'>

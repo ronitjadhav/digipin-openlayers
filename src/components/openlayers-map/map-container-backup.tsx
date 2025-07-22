@@ -211,7 +211,8 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
         setSearchMode(true);
         setCoordinates(coords);
     };
-    };
+
+    useEffect(() => {
         if (mapRef.current && mapboxToken) {
             const isDarkTheme = theme === 'dark';
             const layers = [
@@ -264,7 +265,7 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
 
             return () => map.setTarget(undefined);
         }
-    }, [mapboxToken, setDigipin, theme]);
+    }, [mapboxToken, setDigipin, theme, addPolygonBoundary, defaultCenter, mapboxDarkStyle, mapboxLightStyle]);
 
     // Handle coordinate updates from search
     useEffect(() => {
@@ -290,7 +291,7 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
         };
 
         handleCoordinates();
-    }, [coordinates, setDigipin]);
+    }, [coordinates, setDigipin, addPolygonBoundary]);
 
     return (
         <div className='relative w-full h-full'>
