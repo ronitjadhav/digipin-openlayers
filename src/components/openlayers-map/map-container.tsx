@@ -168,10 +168,10 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
             // Create center marker
             const centerLat = (minLat + maxLat) / 2;
             const centerLon = (minLon + maxLon) / 2;
-            const centerCoords = transform([centerLon, centerLat], 'EPSG:4326', 'EPSG:3857');
+            const centerMarkerCoords = transform([centerLon, centerLat], 'EPSG:4326', 'EPSG:3857');
             
             const centerFeature = new Feature({
-                geometry: new Point(centerCoords),
+                geometry: new Point(centerMarkerCoords),
             });
             centerFeature.setStyle(createCenterMarkerStyle(digipin));
 
@@ -180,27 +180,16 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
             cornerFeatures.forEach(feature => vectorSourceRef.current?.addFeature(feature));
             vectorSourceRef.current.addFeature(centerFeature);
 
-            // Zoom to fit the polygon with enhanced zoom for better digipin visibility
+            // Smooth zoom to the clicked location with digipin visualization
             const view = mapInstanceRef.current.getView();
-            const extent = polygonFeature.getGeometry()?.getExtent();
-            if (extent) {
-                // First, fit the extent to see the full polygon
-                view.fit(extent, {
-                    padding: [30, 30, 30, 30],
-                    maxZoom: digipinSelectZoom,
-                    duration: 800,
-                });
-                
-                // Then zoom in further to the center for detailed view
-                setTimeout(() => {
-                    const centerCoords = transform([centerLon, centerLat], 'EPSG:4326', 'EPSG:3857');
-                    view.animate({
-                        center: centerCoords,
-                        zoom: digipinSelectZoom,
-                        duration: 500,
-                    });
-                }, 300);
-            }
+            const animationCenterCoords = transform([centerLon, centerLat], 'EPSG:4326', 'EPSG:3857');
+            
+            // Animate directly to the center point with appropriate zoom
+            view.animate({
+                center: animationCenterCoords,
+                zoom: digipinSelectZoom,
+                duration: 800,
+            });
 
         } catch (error) {
             console.error('Error creating polygon boundary:', error);
@@ -250,8 +239,8 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
 
             // Handle map click events
             map.on('click', async (event: any) => {
-                const coordinates = event.coordinate;
-                const [longitude, latitude] = transform(coordinates, 'EPSG:3857', 'EPSG:4326');
+                const clickCoordinates = event.coordinate;
+                const [longitude, latitude] = transform(clickCoordinates, 'EPSG:3857', 'EPSG:4326');
                 
                 try {
                     const digipin = await getDIGIPINFromLatLon(latitude, longitude);
