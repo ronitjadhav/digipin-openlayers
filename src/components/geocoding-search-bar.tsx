@@ -5,7 +5,7 @@ import { queryGeonames, GeonamesOptions} from "@geospatial-sdk/geocoding";
 import digipin from "digipin";
 
 interface PlaceholdersAndVanishInputDemoProps {
-    onLocationSelect: (coordinates: [number, number], isDigipinSearch?: boolean) => void;
+    onLocationSelect: (coordinates: [number, number], searchType: 'place' | 'coordinates' | 'digipin') => void;
 }
 
 export function PlaceholdersAndVanishInputDemo({ onLocationSelect }: PlaceholdersAndVanishInputDemoProps) {
@@ -61,7 +61,7 @@ export function PlaceholdersAndVanishInputDemo({ onLocationSelect }: Placeholder
         // Immediately navigate to the selected location
         const { geom } = location;
         if (geom.type === "Point" && Array.isArray(geom.coordinates)) {
-            onLocationSelect([geom.coordinates[0], geom.coordinates[1]], false); // false = not a digipin search
+            onLocationSelect([geom.coordinates[0], geom.coordinates[1]], 'place'); // place search
         }
         
         console.log(`Selected location: ${location.label}, Geom: ${JSON.stringify(location.geom)}`);
@@ -133,7 +133,7 @@ export function PlaceholdersAndVanishInputDemo({ onLocationSelect }: Placeholder
             // Validate coordinate ranges
             if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
                 console.log('Valid coordinates found:', { lat, lon });
-                onLocationSelect([lon, lat], false); // Coordinates as [longitude, latitude], not a digipin search
+                onLocationSelect([lon, lat], 'coordinates'); // coordinates search
                 await new Promise(resolve => setTimeout(resolve, 500));
                 setInputValue('');
                 setShowDropdown(false);
@@ -149,14 +149,14 @@ export function PlaceholdersAndVanishInputDemo({ onLocationSelect }: Placeholder
             try {
                 const coordinates = digipin.getLatLonFromDIGIPIN(inputValue);
                 // @ts-ignore
-                onLocationSelect([coordinates?.longitude, coordinates?.latitude], true); // true = digipin search
+                onLocationSelect([coordinates?.longitude, coordinates?.latitude], 'digipin'); // digipin search
             } catch (error) {
                 console.error("Error getting coordinates from Digipin:", error);
             }
         } else if (selectedLocation) {
             const { geom } = selectedLocation;
             if (geom.type === "Point" && Array.isArray(geom.coordinates)) {
-                onLocationSelect([geom.coordinates[0], geom.coordinates[1]], false); // false = not a digipin search
+                onLocationSelect([geom.coordinates[0], geom.coordinates[1]], 'place'); // place search
             }
         }
 

@@ -54,7 +54,15 @@ const MapAttribution: React.FC<MapAttributionProps> = ({ currentBasemap }) => {
   const links = getAttributionLinks(currentBasemap);
 
   return (
-    <div className="absolute bottom-2 left-2 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-sm text-xs text-gray-600 dark:text-gray-400 px-2 py-1 rounded shadow-sm border border-gray-200 dark:border-zinc-600 z-30 max-w-[200px] sm:max-w-none">
+    <div className="absolute bg-white/90 dark:bg-zinc-800/90 backdrop-blur-sm text-xs text-gray-600 dark:text-gray-400 px-2 py-1 rounded shadow-sm border border-gray-200 dark:border-zinc-600 z-20 max-w-[200px] sm:max-w-none
+    
+    /* Responsive positioning strategy:
+       Mobile/Small devices: Bottom-left above search bar for clean layout
+       Medium devices and up: Traditional bottom-left positioning */
+    bottom-20 left-2
+    sm:bottom-24 
+    md:bottom-2
+    ">
       <span className="mr-1">©</span>
       {links.map((link, index) => (
         <React.Fragment key={link.text}>
