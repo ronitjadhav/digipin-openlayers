@@ -2,15 +2,16 @@ import React, { useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useTheme } from 'next-themes';
 import { Button } from './ui/button';
-import { FiCopy, FiMapPin, FiExternalLink, FiMap } from 'react-icons/fi';
+import { FiCopy, FiMapPin, FiExternalLink, FiMap, FiX } from 'react-icons/fi';
 import { motion, useAnimation } from 'framer-motion';
 import { getBoundsFromDIGIPIN } from 'digipin';
 
 interface FloatingDigipinPanelProps {
     digipin: string;
+    onClose?: () => void;
 }
 
-const FloatingDigipinPanel: React.FC<FloatingDigipinPanelProps> = ({ digipin }) => {
+const FloatingDigipinPanel: React.FC<FloatingDigipinPanelProps> = ({ digipin, onClose }) => {
     const { theme } = useTheme();
     const controls = useAnimation();
 
@@ -29,6 +30,20 @@ const FloatingDigipinPanel: React.FC<FloatingDigipinPanelProps> = ({ digipin }) 
             });
         }
     }, [digipin, controls]);
+
+    // Handle ESC key to close panel
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && digipin && onClose) {
+                onClose();
+            }
+        };
+
+        if (digipin && onClose) {
+            document.addEventListener('keydown', handleKeyDown);
+            return () => document.removeEventListener('keydown', handleKeyDown);
+        }
+    }, [digipin, onClose]);
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText(digipin).then(() => {
@@ -180,18 +195,36 @@ const FloatingDigipinPanel: React.FC<FloatingDigipinPanelProps> = ({ digipin }) 
                     : 'bg-white/90 text-black border border-gray-200'
             } transition-all duration-300 flex flex-col items-center
             
-            /* Mobile: Position above search bar with smaller size */
-            bottom-20 right-3 max-w-[260px]
+            /* Mobile: Position well above search bar */
+            bottom-28 right-3 max-w-[260px]
             
-            /* Small screens and up: Move higher to avoid search overlap */
-            sm:bottom-24 sm:right-4 sm:max-w-[280px]
+            /* Small screens: Better spacing for small tablets */
+            sm:bottom-32 sm:right-4 sm:max-w-[280px]
             
-            /* Medium screens and up: Standard desktop positioning */
+            /* Medium screens (tablets): Move to side to avoid search overlap */
             md:bottom-6 md:right-6 md:max-w-[300px]
             
             /* Large screens: Maintain desktop positioning */
-            lg:bottom-6 lg:right-6`}
+            lg:bottom-6 lg:right-6 lg:max-w-[320px]
+            
+            /* Extra large screens: More spacing */
+            xl:bottom-8 xl:right-8`}
         >
+            {/* Close button */}
+            {onClose && (
+                <button
+                    onClick={onClose}
+                    className={`absolute top-2 right-2 p-1 rounded-full transition-colors ${
+                        theme === 'dark'
+                            ? 'hover:bg-gray-700 text-gray-400 hover:text-white'
+                            : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
+                    }`}
+                    aria-label="Close digipin panel"
+                >
+                    <FiX size={16} />
+                </button>
+            )}
+            
             <div className="flex flex-col items-center w-full">
                 <div className="flex items-center gap-1 mb-2">
                     <FiMapPin size={16} className="text-rose-500" />

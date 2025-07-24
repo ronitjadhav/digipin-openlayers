@@ -12,6 +12,10 @@ const Dashboard = () => {
     const [digipin, setDigipin] = useState<string>('');
     const { theme } = useTheme();
 
+    const handleCloseDigipinPanel = () => {
+        setDigipin('');
+    };
+
     return (
         <>
             {/* SEO-friendly hidden content for search engines */}
@@ -47,7 +51,7 @@ const Dashboard = () => {
                     className="w-full h-[calc(100vh-1rem)] sm:h-[calc(100vh-2rem)] relative rounded-lg sm:rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 shadow-xl dark:shadow-neutral-900/40"
                 >
                     <MapContainer setDigipin={setDigipin} />
-                    <FloatingDigipinPanel digipin={digipin} />
+                    <FloatingDigipinPanel digipin={digipin} onClose={handleCloseDigipinPanel} />
                 </motion.div>
             </div>
             
