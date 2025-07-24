@@ -1,15 +1,18 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import 'ol/ol.css';
 import { Map, View, Feature } from 'ol';
 import { transform } from 'ol/proj';
 import { Vector as VectorLayer, Tile as TileLayer } from 'ol/layer';
-import { Vector as VectorSource } from 'ol/source';
+import { Vector as VectorSource, OSM, XYZ } from 'ol/source';
 import { Polygon, Point } from 'ol/geom';
 import { Style, Fill, Stroke, Circle, Text } from 'ol/style';
+import { defaults as defaultControls, Zoom, Rotate } from 'ol/control';
 import { getDIGIPINFromLatLon, getBoundsFromDIGIPIN } from 'digipin';
 import { MapboxVectorLayer } from 'ol-mapbox-style';
 import './map-container.css';
 import { PlaceholdersAndVanishInputDemo } from "@/components/geocoding-search-bar";
+import BasemapSelector from '@/components/basemap-selector';
+import MapAttribution from '@/components/map-attribution';
 import { useTheme } from 'next-themes';
 
 interface MapContainerProps {
@@ -24,12 +27,58 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
     const mapboxLightStyle = String(process.env.NEXT_PUBLIC_MAPBOX_LIGHT_STYLE_URL);
     const mapboxDarkStyle = String(process.env.NEXT_PUBLIC_MAPBOX_DARK_STYLE_URL);
     const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
-    const [searchMode, setSearchMode] = useState(false); // Track if location is from search
+    const [isSearchResult, setIsSearchResult] = useState(false); // Track if current coordinates are from search
+    const [currentBasemap, setCurrentBasemap] = useState<string>('mapbox-light');
     const { theme } = useTheme();
+
     const defaultCenter: [number, number] = [78.9629, 20.5937];
     const defaultZoom: number = 4;
     const maxZoom: number = 22; // Maximum zoom level - increased for better digipin visibility
     const digipinSelectZoom: number = 20; // Specific zoom level when selecting a digipin
+    const searchZoom: number = 14; // City-level zoom for search results
+
+    // Create basemap layer based on type
+    const createBasemapLayer = (basemapId: string) => {
+        switch (basemapId) {
+            case 'mapbox-light':
+                return new MapboxVectorLayer({
+                    styleUrl: mapboxLightStyle,
+                    accessToken: mapboxToken,
+                });
+            case 'mapbox-dark':
+                return new MapboxVectorLayer({
+                    styleUrl: mapboxDarkStyle,
+                    accessToken: mapboxToken,
+                });
+            case 'osm':
+                return new TileLayer({
+                    source: new OSM({
+                        attributions: [], // Remove attribution from source
+                    }),
+                });
+            case 'satellite':
+                return new TileLayer({
+                    source: new XYZ({
+                        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                        attributions: [], // Remove attribution from source
+                        maxZoom: 19,
+                    }),
+                });
+            case 'terrain':
+                return new TileLayer({
+                    source: new XYZ({
+                        url: 'https://{a-c}.tile.opentopomap.org/{z}/{x}/{y}.png',
+                        attributions: [], // Remove attribution from source
+                        maxZoom: 17,
+                    }),
+                });
+            default:
+                return new MapboxVectorLayer({
+                    styleUrl: theme === 'dark' ? mapboxDarkStyle : mapboxLightStyle,
+                    accessToken: mapboxToken,
+                });
+        }
+    };
 
     // Create enhanced polygon style with multiple visibility features
     const createPolygonStyle = (digipin: string) => {
@@ -167,10 +216,10 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
             // Create center marker
             const centerLat = (minLat + maxLat) / 2;
             const centerLon = (minLon + maxLon) / 2;
-            const centerCoords = transform([centerLon, centerLat], 'EPSG:4326', 'EPSG:3857');
+            const centerMarkerCoords = transform([centerLon, centerLat], 'EPSG:4326', 'EPSG:3857');
             
             const centerFeature = new Feature({
-                geometry: new Point(centerCoords),
+                geometry: new Point(centerMarkerCoords),
             });
             centerFeature.setStyle(createCenterMarkerStyle(digipin));
 
@@ -179,27 +228,16 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
             cornerFeatures.forEach(feature => vectorSourceRef.current?.addFeature(feature));
             vectorSourceRef.current.addFeature(centerFeature);
 
-            // Zoom to fit the polygon with enhanced zoom for better digipin visibility
+            // Smooth zoom to the clicked location with digipin visualization
             const view = mapInstanceRef.current.getView();
-            const extent = polygonFeature.getGeometry()?.getExtent();
-            if (extent) {
-                // First, fit the extent to see the full polygon
-                view.fit(extent, {
-                    padding: [30, 30, 30, 30],
-                    maxZoom: digipinSelectZoom,
-                    duration: 800,
-                });
-                
-                // Then zoom in further to the center for detailed view
-                setTimeout(() => {
-                    const centerCoords = transform([centerLon, centerLat], 'EPSG:4326', 'EPSG:3857');
-                    view.animate({
-                        center: centerCoords,
-                        zoom: digipinSelectZoom,
-                        duration: 500,
-                    });
-                }, 300);
-            }
+            const animationCenterCoords = transform([centerLon, centerLat], 'EPSG:4326', 'EPSG:3857');
+            
+            // Animate directly to the center point with appropriate zoom
+            view.animate({
+                center: animationCenterCoords,
+                zoom: digipinSelectZoom,
+                duration: 800,
+            });
 
         } catch (error) {
             console.error('Error creating polygon boundary:', error);
@@ -207,19 +245,67 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
     };
 
     // Handle search location selection (less aggressive zoom, no digipin markers)
-    const handleSearchLocation = (coords: [number, number]) => {
-        setSearchMode(true);
+    const handleSearchLocation = (coords: [number, number], isDigipinSearch: boolean = false) => {
+        console.log('handleSearchLocation called with coords:', coords);
+        console.log('Is digipin search:', isDigipinSearch);
+        setIsSearchResult(!isDigipinSearch); // If it's a digipin search, don't treat it as a regular search result
         setCoordinates(coords);
     };
+
+    // Handle basemap change
+    const handleBasemapChange = (basemapId: string) => {
+        setCurrentBasemap(basemapId);
+        
+        if (mapInstanceRef.current) {
+            const map = mapInstanceRef.current;
+            const layers = map.getLayers();
+            const view = map.getView();
+            
+            // Preserve current map state
+            const currentCenter = view.getCenter();
+            const currentZoom = view.getZoom();
+            const currentRotation = view.getRotation();
+            
+            // Preserve vector layer (with digipin features)
+            const vectorLayer = layers.item(1); // Vector layer is second layer
+            const vectorFeatures = vectorSourceRef.current?.getFeatures() || [];
+            
+            // Remove the current basemap layer (first layer)
+            const currentBasemapLayer = layers.item(0);
+            map.removeLayer(currentBasemapLayer);
+            
+            // Add new basemap layer at index 0
+            const newBasemapLayer = createBasemapLayer(basemapId);
+            layers.insertAt(0, newBasemapLayer);
+            
+            // Restore map state after a brief delay to ensure layer is loaded
+            setTimeout(() => {
+                if (currentCenter && currentZoom !== undefined) {
+                    view.animate({
+                        center: currentCenter,
+                        zoom: currentZoom,
+                        rotation: currentRotation,
+                        duration: 0, // Instant restoration
+                    });
+                }
+            }, 100);
+        }
     };
-        if (mapRef.current && mapboxToken) {
-            const isDarkTheme = theme === 'dark';
-            const layers = [
-                new MapboxVectorLayer({
-                    styleUrl: isDarkTheme ? mapboxDarkStyle : mapboxLightStyle,
-                    accessToken: mapboxToken,
-                }),
-            ];
+
+    // Auto-switch Mapbox theme based on app theme
+    useEffect(() => {
+        if (currentBasemap.startsWith('mapbox')) {
+            const newBasemap = theme === 'dark' ? 'mapbox-dark' : 'mapbox-light';
+            if (newBasemap !== currentBasemap) {
+                // Use the basemap change handler to preserve state
+                handleBasemapChange(newBasemap);
+            }
+        }
+    }, [theme]); // Removed currentBasemap from dependencies to avoid circular updates    useEffect(() => {
+        if (mapRef.current && mapboxToken && !mapInstanceRef.current) {
+            // Create basemap layer
+            const basemapLayer = createBasemapLayer(currentBasemap);
+            const layers = [basemapLayer];
 
             // Create vector source and layer for polygons
             const vectorSource = new VectorSource();
@@ -242,16 +328,22 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
                 target: mapRef.current,
                 layers: allLayers,
                 view: view,
+                controls: defaultControls({
+                    attribution: false, // Disable default attribution
+                    zoom: true,
+                    rotate: true,
+                }),
             });
 
             // Handle map click events
             map.on('click', async (event: any) => {
-                const coordinates = event.coordinate;
-                const [longitude, latitude] = transform(coordinates, 'EPSG:3857', 'EPSG:4326');
+                const clickCoordinates = event.coordinate;
+                const [longitude, latitude] = transform(clickCoordinates, 'EPSG:3857', 'EPSG:4326');
                 
                 try {
                     const digipin = await getDIGIPINFromLatLon(latitude, longitude);
                     setDigipin(digipin);
+                    setIsSearchResult(false); // Reset search result flag when clicking on map
                     
                     // Add polygon boundary visualization
                     await addPolygonBoundary(latitude, longitude);
@@ -264,7 +356,7 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
 
             return () => map.setTarget(undefined);
         }
-    }, [mapboxToken, setDigipin, theme]);
+    }, [mapboxToken, setDigipin]); // Removed currentBasemap from dependencies
 
     // Handle coordinate updates from search
     useEffect(() => {
@@ -275,28 +367,63 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
                 const transformedCoords: [number, number] = transform([lon, lat], 'EPSG:4326', 'EPSG:3857') as [number, number];
                 
                 console.log(`Zooming to coordinates: ${transformedCoords}`);
+                console.log('Is search result:', isSearchResult);
                 view.setCenter(transformedCoords);
-                view.setZoom(digipinSelectZoom); // Use enhanced zoom level for search results
                 
-                // Get DIGIPIN and add boundary visualization
-                try {
-                    const digipin = await getDIGIPINFromLatLon(lat, lon);
-                    setDigipin(digipin);
-                    await addPolygonBoundary(lat, lon);
-                } catch (error) {
-                    console.error('Error getting DIGIPIN from coordinates:', error);
+                if (isSearchResult) {
+                    // For search results: moderate zoom and no digipin markers
+                    console.log('Applying search zoom level:', searchZoom);
+                    view.setZoom(searchZoom);
+                    // Clear any existing digipin markers
+                    if (vectorSourceRef.current) {
+                        vectorSourceRef.current.clear();
+                    }
+                    // Still set the digipin for the panel, but don't show markers
+                    try {
+                        const digipin = await getDIGIPINFromLatLon(lat, lon);
+                        setDigipin(digipin);
+                    } catch (error) {
+                        console.error('Error getting DIGIPIN from coordinates:', error);
+                    }
+                } else {
+                    // For direct coordinate input (like digipin codes): use full zoom with markers
+                    view.setZoom(digipinSelectZoom);
+                    try {
+                        const digipin = await getDIGIPINFromLatLon(lat, lon);
+                        setDigipin(digipin);
+                        await addPolygonBoundary(lat, lon);
+                    } catch (error) {
+                        console.error('Error getting DIGIPIN from coordinates:', error);
+                    }
+                }
+                
+                // Reset search result flag after handling coordinates
+                if (isSearchResult) {
+                    setIsSearchResult(false);
                 }
             }
         };
 
         handleCoordinates();
-    }, [coordinates, setDigipin]);
+    }, [coordinates, setDigipin]); // Removed searchMode from dependencies
 
     return (
         <div className='relative w-full h-full'>
             <div ref={mapRef} className='w-full h-full relative bg-neutral-50 dark:bg-neutral-900'>
+                {/* Basemap Selector - Always in right upper corner */}
+                <div className='absolute z-10 top-4 right-4 md:top-6 md:right-6'>
+                    <BasemapSelector
+                        currentBasemap={currentBasemap}
+                        onBasemapChange={handleBasemapChange}
+                    />
+                </div>
+                
+                {/* Custom Attribution - Responsive positioning */}
+                <MapAttribution currentBasemap={currentBasemap} />
+                
+                {/* Search Bar */}
                 <div className='absolute bottom-4 z-10 w-full px-4'>
-                    <PlaceholdersAndVanishInputDemo onLocationSelect={setCoordinates} />
+                    <PlaceholdersAndVanishInputDemo onLocationSelect={handleSearchLocation} />
                 </div>
             </div>
         </div>

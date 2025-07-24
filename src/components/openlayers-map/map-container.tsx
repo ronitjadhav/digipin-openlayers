@@ -3,13 +3,15 @@ import 'ol/ol.css';
 import { Map, View, Feature } from 'ol';
 import { transform } from 'ol/proj';
 import { Vector as VectorLayer, Tile as TileLayer } from 'ol/layer';
-import { Vector as VectorSource } from 'ol/source';
+import { Vector as VectorSource, OSM, XYZ } from 'ol/source';
 import { Polygon, Point } from 'ol/geom';
 import { Style, Fill, Stroke, Circle, Text } from 'ol/style';
 import { getDIGIPINFromLatLon, getBoundsFromDIGIPIN } from 'digipin';
 import { MapboxVectorLayer } from 'ol-mapbox-style';
 import './map-container.css';
 import { PlaceholdersAndVanishInputDemo } from "@/components/geocoding-search-bar";
+import BasemapSelector from "@/components/basemap-selector";
+import MapAttribution from "@/components/map-attribution";
 import { useTheme } from 'next-themes';
 
 interface MapContainerProps {
@@ -20,17 +22,77 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
     const mapRef = useRef<HTMLDivElement | null>(null);
     const mapInstanceRef = useRef<Map | null>(null);
     const vectorSourceRef = useRef<VectorSource | null>(null);
+    const baseLayerRef = useRef<TileLayer<any> | MapboxVectorLayer | null>(null);
     const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
     const mapboxLightStyle = String(process.env.NEXT_PUBLIC_MAPBOX_LIGHT_STYLE_URL);
     const mapboxDarkStyle = String(process.env.NEXT_PUBLIC_MAPBOX_DARK_STYLE_URL);
     const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
     const [isSearchResult, setIsSearchResult] = useState(false); // Track if current coordinates are from search
+    const [currentBasemap, setCurrentBasemap] = useState('mapbox-light');
+    const [isUserSelectedBasemap, setIsUserSelectedBasemap] = useState(false); // Track if user manually selected a basemap
     const { theme } = useTheme();
     const defaultCenter: [number, number] = [78.9629, 20.5937];
     const defaultZoom: number = 4;
     const maxZoom: number = 22; // Maximum zoom level - increased for better digipin visibility
     const digipinSelectZoom: number = 20; // Specific zoom level when selecting a digipin
     const searchZoom: number = 14; // City-level zoom for search results
+
+    // Create basemap layer based on selected basemap
+    const createBasemapLayer = (basemapId: string): TileLayer<any> | MapboxVectorLayer => {
+        switch (basemapId) {
+            case 'mapbox-light':
+                return new MapboxVectorLayer({
+                    styleUrl: mapboxLightStyle,
+                    accessToken: mapboxToken,
+                });
+            case 'mapbox-dark':
+                return new MapboxVectorLayer({
+                    styleUrl: mapboxDarkStyle,
+                    accessToken: mapboxToken,
+                });
+            case 'osm':
+                return new TileLayer({
+                    source: new OSM(),
+                });
+            case 'satellite-esri':
+                return new TileLayer({
+                    source: new XYZ({
+                        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                        maxZoom: 19,
+                    }),
+                });
+            case 'terrain':
+                return new TileLayer({
+                    source: new XYZ({
+                        url: 'https://{a-c}.tile.opentopomap.org/{z}/{x}/{y}.png',
+                        maxZoom: 17,
+                    }),
+                });
+            default:
+                return new TileLayer({
+                    source: new OSM(),
+                });
+        }
+    };
+
+    // Handle basemap change
+    const handleBasemapChange = (basemapId: string) => {
+        if (!mapInstanceRef.current) return;
+
+        setCurrentBasemap(basemapId);
+        setIsUserSelectedBasemap(true); // Mark that user has manually selected a basemap
+        
+        const newBaseLayer = createBasemapLayer(basemapId);
+        
+        // Remove existing base layer
+        if (baseLayerRef.current) {
+            mapInstanceRef.current.removeLayer(baseLayerRef.current);
+        }
+        
+        // Add new base layer at index 0 (bottom)
+        mapInstanceRef.current.getLayers().insertAt(0, newBaseLayer);
+        baseLayerRef.current = newBaseLayer;
+    };
 
     // Create enhanced polygon style with multiple visibility features
     const createPolygonStyle = (digipin: string) => {
@@ -205,14 +267,15 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
     };
 
     useEffect(() => {
-        if (mapRef.current && mapboxToken) {
-            const isDarkTheme = theme === 'dark';
-            const layers = [
-                new MapboxVectorLayer({
-                    styleUrl: isDarkTheme ? mapboxDarkStyle : mapboxLightStyle,
-                    accessToken: mapboxToken,
-                }),
-            ];
+        if (mapRef.current) {
+            // Initialize with default basemap or theme-appropriate mapbox style
+            const defaultBasemap = mapboxToken ? 
+                (theme === 'dark' ? 'mapbox-dark' : 'mapbox-light') : 
+                'osm';
+            
+            setCurrentBasemap(defaultBasemap);
+            const baseLayer = createBasemapLayer(defaultBasemap);
+            baseLayerRef.current = baseLayer;
 
             // Create vector source and layer for polygons
             const vectorSource = new VectorSource();
@@ -223,8 +286,6 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
                 zIndex: 1000, // Ensure polygons appear above the base map
             });
 
-            const allLayers = [...layers, vectorLayer];
-
             const view = new View({
                 center: transform(defaultCenter, 'EPSG:4326', 'EPSG:3857'),
                 zoom: defaultZoom,
@@ -233,7 +294,7 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
 
             const map = new Map({
                 target: mapRef.current,
-                layers: allLayers,
+                layers: [baseLayer, vectorLayer],
                 view: view,
             });
 
@@ -258,7 +319,7 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
 
             return () => map.setTarget(undefined);
         }
-    }, [mapboxToken, setDigipin, theme]);
+    }, [mapboxToken, setDigipin]); // Removed theme dependency to prevent recreation
 
     // Handle coordinate updates from search
     useEffect(() => {
@@ -309,9 +370,38 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
         handleCoordinates();
     }, [coordinates, setDigipin]); // Removed searchMode from dependencies
 
+    // Handle theme changes for Mapbox styles (only if user hasn't manually selected a basemap)
+    useEffect(() => {
+        if (mapboxToken && !isUserSelectedBasemap && (currentBasemap === 'mapbox-light' || currentBasemap === 'mapbox-dark')) {
+            const newBasemap = theme === 'dark' ? 'mapbox-dark' : 'mapbox-light';
+            if (newBasemap !== currentBasemap) {
+                setCurrentBasemap(newBasemap);
+                
+                if (mapInstanceRef.current && baseLayerRef.current) {
+                    const newBaseLayer = createBasemapLayer(newBasemap);
+                    mapInstanceRef.current.removeLayer(baseLayerRef.current);
+                    mapInstanceRef.current.getLayers().insertAt(0, newBaseLayer);
+                    baseLayerRef.current = newBaseLayer;
+                }
+            }
+        }
+    }, [theme, currentBasemap, mapboxToken, isUserSelectedBasemap]);
+
     return (
         <div className='relative w-full h-full'>
             <div ref={mapRef} className='w-full h-full relative bg-neutral-50 dark:bg-neutral-900'>
+                {/* Basemap Selector - Top Right */}
+                <div className='absolute top-4 right-4 z-20'>
+                    <BasemapSelector 
+                        onBasemapChange={handleBasemapChange}
+                        currentBasemap={currentBasemap}
+                    />
+                </div>
+
+                {/* Map Attribution - Bottom Left */}
+                <MapAttribution currentBasemap={currentBasemap} />
+
+                {/* Search Bar - Bottom Center */}
                 <div className='absolute bottom-4 z-10 w-full px-4'>
                     <PlaceholdersAndVanishInputDemo onLocationSelect={handleSearchLocation} />
                 </div>
