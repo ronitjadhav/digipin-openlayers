@@ -394,7 +394,7 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
         <div className='relative w-full h-full'>
             <div ref={mapRef} className='w-full h-full relative bg-neutral-50 dark:bg-neutral-900'>
                 {/* Basemap Selector - Top Right */}
-                <div className='absolute top-4 right-4 z-20'>
+                <div className='absolute top-4 right-4 z-[6100]'>
                     <BasemapSelector 
                         onBasemapChange={handleBasemapChange}
                         currentBasemap={currentBasemap}

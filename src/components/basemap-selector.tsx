@@ -80,12 +80,12 @@ const BasemapSelector: React.FC<BasemapSelectorProps> = ({ onBasemapChange, curr
         <>
           {/* Backdrop to close dropdown */}
           <div 
-            className="fixed inset-0 z-40" 
+            className="fixed inset-0 z-[6500]" 
             onClick={() => setIsOpen(false)}
           />
           
           {/* Dropdown content */}
-          <div className="absolute top-full right-0 mt-2 w-72 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-600 rounded-lg shadow-lg z-50 overflow-hidden">
+          <div className="absolute top-full right-0 mt-2 w-72 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-600 rounded-lg shadow-lg z-[6600] overflow-hidden">
             <div className="p-3">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 px-1">
                 Select Basemap
