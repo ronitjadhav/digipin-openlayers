@@ -368,7 +368,7 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
         };
 
         handleCoordinates();
-    }, [coordinates, setDigipin]); // Removed searchMode from dependencies
+    }, [coordinates, setDigipin, addPolygonBoundary, isSearchResult]); // Removed searchMode from dependencies
 
     // Handle theme changes for Mapbox styles (only if user hasn't manually selected a basemap)
     useEffect(() => {
