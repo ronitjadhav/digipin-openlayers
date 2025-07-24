@@ -258,11 +258,15 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
         }
     };
 
-    // Handle search location selection (less aggressive zoom, no digipin markers)
-    const handleSearchLocation = (coords: [number, number], isDigipinSearch: boolean = false) => {
+    // Handle search location selection with different behaviors based on search type
+    const handleSearchLocation = (coords: [number, number], searchType: 'place' | 'coordinates' | 'digipin') => {
         console.log('handleSearchLocation called with coords:', coords);
-        console.log('Is digipin search:', isDigipinSearch);
-        setIsSearchResult(!isDigipinSearch); // If it's a digipin search, don't treat it as a regular search result
+        console.log('Search type:', searchType);
+        
+        // Set search result flag based on search type
+        // 'place' searches should use city-level zoom and no markers
+        // 'coordinates' and 'digipin' searches should use full zoom with markers
+        setIsSearchResult(searchType === 'place');
         setCoordinates(coords);
     };
 
@@ -334,7 +338,7 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
                 view.setCenter(transformedCoords);
                 
                 if (isSearchResult) {
-                    // For search results: moderate zoom and no digipin markers
+                    // For place name searches: moderate zoom and no digipin markers
                     console.log('Applying search zoom level:', searchZoom);
                     view.setZoom(searchZoom);
                     // Clear any existing digipin markers
@@ -349,7 +353,7 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
                         console.error('Error getting DIGIPIN from coordinates:', error);
                     }
                 } else {
-                    // For direct coordinate input (like digipin codes): use full zoom with markers
+                    // For coordinate and digipin searches: use full zoom with markers
                     view.setZoom(digipinSelectZoom);
                     try {
                         const digipin = await getDIGIPINFromLatLon(lat, lon);
@@ -360,15 +364,14 @@ const MapContainer: React.FC<MapContainerProps> = ({ setDigipin }) => {
                     }
                 }
                 
-                // Reset search result flag after handling coordinates
-                if (isSearchResult) {
-                    setIsSearchResult(false);
-                }
+                // Reset coordinates and search state after handling them
+                setCoordinates(null);
+                setIsSearchResult(false);
             }
         };
 
         handleCoordinates();
-    }, [coordinates, setDigipin, addPolygonBoundary, isSearchResult]); // Removed searchMode from dependencies
+    }, [coordinates, setDigipin, isSearchResult]);
 
     // Handle theme changes for Mapbox styles (only if user hasn't manually selected a basemap)
     useEffect(() => {
